@@ -1,0 +1,13 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+#entry-form {
+    margin-bottom: 20px;
+}
+
+#entries-list ul {
+    list-style-type: none;
+    padding: 0;
+}
