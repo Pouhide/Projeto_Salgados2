@@ -8,8 +8,22 @@
     <title>Conexão Django</title>
     <link rel="stylesheet" href="{% static 'styles/styles.css' %}">
 </head>
+
+<header class="site-header">
+    <div class="logo">
+        <img src="{% static 'imagens/logo.png' %}" alt="Logo Salgados da Dona Angela">
+    </div>
+    <nav class="main-nav">
+        <ul>
+            <li><a href="/">Início</a></li>
+            <li><a href="{% url 'sobre' %}">Sobre</a></li>
+            <li><a href="/contato/">Contato</a></li>
+        </ul>
+    </nav>
+</header>
+
 <body>
-    <h1>Gerenciador de Entradas</h1>
+ <!--  
     <div id="entry-form">
         <input type="text" id="name" placeholder="Nome" required>
         <textarea id="description" placeholder="Descrição"></textarea>
@@ -19,6 +33,73 @@
         <h2>Entradas:</h2>
         <ul id="entries"></ul>
     </div>
+-->
+<h1>Loja de Salgados</h1>
+
+<h2>Produtos Disponíveis:</h2>
+<div class="produtos-container">
+    <!-- Produto 1 -->
+    <div class="produto">
+        <div class="salgados_image">
+            <img src="{% static 'imagens/coxinhas_image.png' %}" alt="coxinhas_image">
+        </div>
+        <h3>Coxinha</h3>
+        <p>Preço: R$ 5.00</p>
+        <button class="add-to-cart" data-produto-nome="Coxinha" data-produto-preco="5.00">Comprar</button>
+    </div>
+
+    <!-- Produto 2 -->
+    <div class="produto">
+        <div class="salgados_image">
+            <img src="{% static 'imagens/croissants_image.png' %}" alt="croissants_image">
+        </div>
+        <h3>Croissant</h3>
+        <p>Preço: R$ 7.00</p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="produto_nome" value="Croissant">
+            <input type="hidden" name="produto_preco" value="7.00">
+            <button type="submit" name="adicionar">Comprar</button>
+        </form>
+    </div>
+    
+
+    <!-- Produto 3 -->
+    <div class="produto">
+        <div class="salgados_image">
+            <img src="{% static 'imagens/croissants_image.png' %}" alt="croissants_image">
+        </div>
+        <h3>Croissant</h3>
+        <p>Preço: R$ 7.00</p>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="produto_nome" value="Croissant">
+            <input type="hidden" name="produto_preco" value="7.00">
+            <button type="submit" name="adicionar">Comprar</button>
+        </form>
+    </div>    
+<hr>
+
+<h2>Carrinho</h2>
+{% if carrinho %}
+    <ul>
+        {% for item in carrinho %}
+            <li>{{ item.nome }} - R$ {{ item.preco }}</li>
+        {% endfor %}
+    </ul>
+    <form method="post">
+        {% csrf_token %}
+        <button id="finalizar-compra">Finalizar Compra</button>
+    </form>    
+{% else %}
+    <p>Seu carrinho está vazio.</p>
+{% endif %}
+
+{% if mensagem %}
+    <h3>{{ mensagem }}</h3>
+{% endif %}
+
+
     <script src="{% static 'script/script.js' %}"></script>
 </body>
 </html>

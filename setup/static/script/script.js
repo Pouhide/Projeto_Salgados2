@@ -4,42 +4,74 @@ function getCSRFToken() {
     return meta ? meta.getAttribute('content') : '';
 }
 
-// Função para buscar entradas
-function loadEntries() {
-    fetch('/api/entries/')
-        .then(response => response.json())
-        .then(data => {
-            const entriesList = document.getElementById('entries');
-            entriesList.innerHTML = '';
-            data.forEach(entry => {
-                const li = document.createElement('li');
-                li.textContent = `${entry.name}: ${entry.description}`;
-                entriesList.appendChild(li);
-            });
-        });
-}
+// Função para adicionar um produto ao carrinho
+function addToCart(event, produtoNome, produtoPreco) {
+    event.preventDefault(); // Impede o comportamento padrão do botão
 
-// Função para adicionar uma nova entrada
-function addEntry() {
-    const name = document.getElementById('name').value;
-    const description = document.getElementById('description').value;
+    // Dados do produto
+    const data = new URLSearchParams();
+    data.append('produto_nome', produtoNome);
+    data.append('produto_preco', produtoPreco);
+    data.append('adicionar', 'true'); // Indica a ação de adicionar ao carrinho
 
-    fetch('/api/entries/add/', {
+    // Envia os dados para o backend
+    fetch('/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': getCSRFToken(), // Inclui o CSRF Token no cabeçalho
         },
-        body: `name=${encodeURIComponent(name)}&description=${encodeURIComponent(description)}`
+        body: data,
     })
-    .then(response => response.json())
-    .then(() => {
-        loadEntries(); // Atualizar a lista de entradas
-        document.getElementById('name').value = '';
-        document.getElementById('description').value = '';
+    .then(response => response.text())
+    .then(html => {
+        document.body.innerHTML = html; // Atualiza a página com a resposta do servidor
+        alert('Produto adicionado ao carrinho!');
     })
-    .catch(error => console.error('Erro ao adicionar entrada:', error));
+    .catch(error => console.error('Erro ao adicionar ao carrinho:', error));
 }
 
-// Carregar as entradas ao abrir a página
-document.addEventListener('DOMContentLoaded', loadEntries);
+// Função para finalizar a compra
+function finalizarCompra(event) {
+    event.preventDefault(); // Impede o comportamento padrão do botão
+
+    // Dados para finalizar a compra
+    const data = new URLSearchParams();
+    data.append('finalizar', 'true'); // Indica a ação de finalizar compra
+
+    // Envia a requisição para o backend
+    fetch('/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCSRFToken(),
+        },
+        body: data,
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.body.innerHTML = html; // Atualiza a página com a resposta do servidor
+        alert('Compra finalizada!');
+    })
+    .catch(error => console.error('Erro ao finalizar compra:', error));
+}
+
+// Adiciona eventos aos botões
+document.addEventListener('DOMContentLoaded', () => {
+    // Adicionar ao carrinho
+    const addButtons = document.querySelectorAll('.add-to-cart');
+    addButtons.forEach(button => {
+        const produtoNome = button.dataset.produtoNome;
+        const produtoPreco = button.dataset.produtoPreco;
+
+        button.addEventListener('click', (event) => {
+            addToCart(event, produtoNome, produtoPreco);
+        });
+    });
+
+    // Finalizar compra
+    const finalizarButton = document.querySelector('#finalizar-compra');
+    if (finalizarButton) {
+        finalizarButton.addEventListener('click', finalizarCompra);
+    }
+});
