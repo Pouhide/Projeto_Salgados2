@@ -1,39 +1,62 @@
 from django.shortcuts import render
+from django.http import JsonResponse
 from .models import Pedido
+from decimal import Decimal
 
+
+# Página inicial
 def index(request):
-    return render(request, 'galeria/index.html')
+    carrinho = request.session.get('carrinho', [])  # Recupera o carrinho da sessão
+    mensagem = request.GET.get('mensagem', '')  # Mensagem opcional (se houver)
+    return render(request, 'galeria/index.html', {'carrinho': carrinho, 'mensagem': mensagem})
 
+# Página sobre
 def sobre(request):
     return render(request, 'galeria/sobre.html')
 
-#Banco de dados   
-# Carrinho na memória
-carrinho = []
 
-def loja_view(request):
-    mensagem = None
+# Recuperar carrinho da sessão
+def get_carrinho(request):
+    return request.session.get('carrinho', [])
 
-    if request.method == "POST":
-        print("POST Data:", request.POST)  # Debug
 
-        # Adicionando ao carrinho
-        if "adicionar" in request.POST:
-            nome = request.POST.get("produto_nome")
-            preco = request.POST.get("produto_preco")
-            if nome and preco:
-                carrinho.append({"nome": nome, "preco": float(preco)})
-                print(f"Adicionado ao Carrinho: {nome} - R$ {preco}")
+# Salvar carrinho na sessão
+def salvar_carrinho(request, carrinho):
+    request.session['carrinho'] = carrinho
+    request.session.modified = True
 
-        # Finalizando a compra e salvando no banco de dados
-        elif "finalizar" in request.POST:
-            print("Finalizando Compra...")
-            for item in carrinho:
-                Pedido.objects.create(
-                    produto=item["nome"], preco=item["preco"], quantidade=1
+
+# Retorna o carrinho atual
+def api_carrinho(request):
+    carrinho = get_carrinho(request)
+    print("Carrinho atual:", carrinho)  # Log para depuração
+    return JsonResponse(carrinho, safe=False)
+
+
+def api_carrinho_add(request):
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        preco = request.POST.get('preco')
+        quantidade = request.POST.get('quantidade', 1)  # Quantidade padrão é 1
+
+        if nome and preco:
+            try:
+                # Valida e converte os dados
+                preco = Decimal(preco)
+                quantidade = int(quantidade)
+
+                # Salva diretamente no banco de dados
+                pedido = Pedido.objects.create(
+                    produto=nome,
+                    preco=preco,
+                    quantidade=quantidade
                 )
-            carrinho.clear()  # Limpa o carrinho após finalizar
-            mensagem = "Compra finalizada!"
+                print(f"Pedido salvo: {pedido}")  # Log para depuração
+                return JsonResponse({'status': 'success', 'message': f'Item {nome} adicionado ao banco com sucesso!'})
+            except Exception as e:
+                print(f"Erro ao salvar no banco: {e}")  # Log de erro
+                return JsonResponse({'status': 'error', 'message': 'Erro ao salvar no banco de dados!'}, status=500)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Dados inválidos'}, status=400)
 
-    # Renderizar a página com o contexto atualizado
-    return render(request, "galeria/loja.html", {"carrinho": carrinho, "mensagem": mensagem})
+    return JsonResponse({'status': 'error', 'message': 'Método não permitido'}, status=405)

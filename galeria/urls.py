@@ -1,9 +1,9 @@
 from django.urls import path
-from galeria.views import index, sobre
-from . import views
+from .views import index, sobre, api_carrinho, api_carrinho_add
 
 urlpatterns = [
-    path('', index),
+    path('', index, name='index'),
     path('sobre/', sobre, name='sobre'),
-    path('', views.loja_view, name='loja'),
+    path('api/carrinho/', api_carrinho, name='api_carrinho'),  # Retorna o carrinho atual
+    path('api/carrinho/add/', api_carrinho_add, name='api_carrinho_add'),  # Adiciona item ao carrinho
 ]

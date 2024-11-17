@@ -4,74 +4,58 @@ function getCSRFToken() {
     return meta ? meta.getAttribute('content') : '';
 }
 
-// Função para adicionar um produto ao carrinho
-function addToCart(event, produtoNome, produtoPreco) {
-    event.preventDefault(); // Impede o comportamento padrão do botão
-
-    // Dados do produto
-    const data = new URLSearchParams();
-    data.append('produto_nome', produtoNome);
-    data.append('produto_preco', produtoPreco);
-    data.append('adicionar', 'true'); // Indica a ação de adicionar ao carrinho
-
-    // Envia os dados para o backend
-    fetch('/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': getCSRFToken(), // Inclui o CSRF Token no cabeçalho
-        },
-        body: data,
-    })
-    .then(response => response.text())
-    .then(html => {
-        document.body.innerHTML = html; // Atualiza a página com a resposta do servidor
-        alert('Produto adicionado ao carrinho!');
-    })
-    .catch(error => console.error('Erro ao adicionar ao carrinho:', error));
+// Função para carregar os itens do carrinho
+function loadCarrinho() {
+    fetch('/api/carrinho/')
+        .then(response => response.json())
+        .then(data => {
+            const carrinhoList = document.getElementById('carrinho');
+            carrinhoList.innerHTML = ''; // Limpar lista atual
+            data.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = `${item.nome} - R$ ${item.preco.toFixed(2)}`;
+                carrinhoList.appendChild(li);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar o carrinho:', error));
 }
 
-// Função para finalizar a compra
-function finalizarCompra(event) {
-    event.preventDefault(); // Impede o comportamento padrão do botão
-
-    // Dados para finalizar a compra
-    const data = new URLSearchParams();
-    data.append('finalizar', 'true'); // Indica a ação de finalizar compra
-
-    // Envia a requisição para o backend
-    fetch('/', {
+// Função para adicionar um produto ao carrinho
+function addToCart(nome, preco) {
+    fetch('/api/carrinho/add/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': getCSRFToken(),
         },
-        body: data,
+        body: `nome=${encodeURIComponent(nome)}&preco=${encodeURIComponent(preco)}`
     })
-    .then(response => response.text())
-    .then(html => {
-        document.body.innerHTML = html; // Atualiza a página com a resposta do servidor
-        alert('Compra finalizada!');
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message); // Mostrar mensagem de sucesso
+            loadCarrinho(); // Atualizar o carrinho na página
+        } else {
+            alert('Erro: ' + data.message);
+        }
     })
-    .catch(error => console.error('Erro ao finalizar compra:', error));
+    .catch(error => console.error('Erro ao adicionar ao carrinho:', error));
 }
 
-// Adiciona eventos aos botões
+// Configuração dos botões "Comprar"
 document.addEventListener('DOMContentLoaded', () => {
-    // Adicionar ao carrinho
+    // Selecionar todos os botões com a classe 'add-to-cart'
     const addButtons = document.querySelectorAll('.add-to-cart');
     addButtons.forEach(button => {
-        const produtoNome = button.dataset.produtoNome;
-        const produtoPreco = button.dataset.produtoPreco;
+        const nome = button.dataset.produtoNome; // Nome do produto
+        const preco = button.dataset.produtoPreco; // Preço do produto
 
-        button.addEventListener('click', (event) => {
-            addToCart(event, produtoNome, produtoPreco);
+        // Adicionar evento de clique
+        button.addEventListener('click', () => {
+            addToCart(nome, preco);
         });
     });
 
-    // Finalizar compra
-    const finalizarButton = document.querySelector('#finalizar-compra');
-    if (finalizarButton) {
-        finalizarButton.addEventListener('click', finalizarCompra);
-    }
+    // Carregar o carrinho ao iniciar a página
+    loadCarrinho();
 });
